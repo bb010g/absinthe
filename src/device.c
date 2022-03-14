@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 #include <libimobiledevice/libimobiledevice.h>
 
 #include "device.h"

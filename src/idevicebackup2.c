@@ -28,6 +28,8 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <libgen.h>
+#include <time.h>
+#include <ctype.h>
 
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
@@ -477,7 +479,7 @@ static int mobilebackup_info_is_current_device(lockdownd_client_t lockdown, plis
 
 static void do_post_notification(idevice_t device, const char *notification)
 {
-	uint16_t nport = 0;
+	lockdownd_service_descriptor_t ndescriptor = NULL;
 	np_client_t np;
 
 	lockdownd_client_t lockdown = NULL;
@@ -486,9 +488,9 @@ static void do_post_notification(idevice_t device, const char *notification)
 		return;
 	}
 
-	lockdownd_start_service(lockdown, NP_SERVICE_NAME, &nport);
-	if (nport) {
-		np_client_new(device, nport, &np);
+	lockdownd_start_service(lockdown, NP_SERVICE_NAME, &ndescriptor);
+	if (ndescriptor != NULL) {
+		np_client_new(device, ndescriptor, &np);
 		if (np) {
 			np_post_notification(np, notification);
 			np_client_free(np);
@@ -1134,7 +1136,7 @@ int idevicebackup2(int argc, char *argv[])
 	idevice_error_t ret = IDEVICE_E_UNKNOWN_ERROR;
 	int i;
 	char* udid = NULL;
-	uint16_t port = 0;
+	lockdownd_service_descriptor_t descriptor = NULL;
 	int cmd = -1;
 	int cmd_flags = 0;
 	int is_full_backup = 0;
@@ -1267,9 +1269,9 @@ int idevicebackup2(int argc, char *argv[])
 
 	/* start notification_proxy */
 	np_client_t np = NULL;
-	ret = lockdownd_start_service(lockdown, NP_SERVICE_NAME, &port);
-	if ((ret == LOCKDOWN_E_SUCCESS) && port) {
-		np_client_new(device, port, &np);
+	ret = lockdownd_start_service(lockdown, NP_SERVICE_NAME, &descriptor);
+	if ((ret == LOCKDOWN_E_SUCCESS) && descriptor != NULL) {
+		np_client_new(device, descriptor, &np);
 		np_set_notify_callback(np, notify_cb, NULL);
 		const char *noties[5] = {
 			NP_SYNC_CANCEL_REQUEST,
@@ -1286,20 +1288,20 @@ int idevicebackup2(int argc, char *argv[])
 	afc_client_t afc = NULL;
 	if (cmd == CMD_BACKUP) {
 		/* start AFC, we need this for the lock file */
-		port = 0;
-		ret = lockdownd_start_service(lockdown, "com.apple.afc", &port);
-		if ((ret == LOCKDOWN_E_SUCCESS) && port) {
-			afc_client_new(device, port, &afc);
+		descriptor = NULL;
+		ret = lockdownd_start_service(lockdown, "com.apple.afc", &descriptor);
+		if ((ret == LOCKDOWN_E_SUCCESS) && descriptor != NULL) {
+			afc_client_new(device, descriptor, &afc);
 		}
 	}
 
 	/* start mobilebackup service and retrieve port */
 	mobilebackup2_client_t mobilebackup2 = NULL;
-	port = 0;
-	ret = lockdownd_start_service(lockdown, MOBILEBACKUP2_SERVICE_NAME, &port);
-	if ((ret == LOCKDOWN_E_SUCCESS) && port) {
-		PRINT_VERBOSE(1, "Started \"%s\" service on port %d.\n", MOBILEBACKUP2_SERVICE_NAME, port);
-		mobilebackup2_client_new(device, port, &mobilebackup2);
+	descriptor = NULL;
+	ret = lockdownd_start_service(lockdown, MOBILEBACKUP2_SERVICE_NAME, &descriptor);
+	if ((ret == LOCKDOWN_E_SUCCESS) && descriptor != NULL) {
+		PRINT_VERBOSE(1, "Started \"%s\" service on port %d.\n", MOBILEBACKUP2_SERVICE_NAME, descriptor->port);
+		mobilebackup2_client_new(device, descriptor, &mobilebackup2);
 
 		/* send Hello message */
 		double local_versions[2] = {2.0, 2.1};

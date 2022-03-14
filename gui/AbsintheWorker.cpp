@@ -1,16 +1,12 @@
 #include <cstdio>
 #include <stdlib.h>
 #include <string.h>
+#include <usbmuxd.h>
 #include "AbsintheWorker.h"
 #include "AbsintheJailbreaker.h"
 #include "iTunesKiller.h"
 #include "device_types.h"
 #include "jailbreak.h"
-
-extern "C" {
-typedef int16_t userpref_error_t;
-extern userpref_error_t userpref_remove_device_public_key(const char *udid);
-}
 
 static int detection_blocked = 0;
 static AbsintheWorker* self;
@@ -147,7 +143,7 @@ void AbsintheWorker::checkDevice()
 				char *devudid = NULL;
 				idevice_get_udid(dev, &devudid);
 				if (devudid) {
-					userpref_remove_device_public_key(devudid);
+					usbmuxd_delete_pair_record(devudid);
 					free(devudid);
 				}
 			}
@@ -173,7 +169,7 @@ void AbsintheWorker::checkDevice()
 							char *devudid = NULL;
 							idevice_get_udid(dev, &devudid);
 							if (devudid) {
-								userpref_remove_device_public_key(devudid);
+								usbmuxd_delete_pair_record(devudid);
 								free(devudid);
 							}
 						}

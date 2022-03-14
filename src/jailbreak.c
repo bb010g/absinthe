@@ -23,10 +23,12 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <dirent.h>
+#include <time.h>
 
 #include <plist/plist.h>
 
 #include <libimobiledevice/afc.h>
+#include <libimobiledevice/lockdown.h>
 #include <libimobiledevice/sbservices.h>
 #include <libimobiledevice/file_relay.h>
 
@@ -839,8 +841,8 @@ static int jailbreak_50(const char* udid, status_cb_t status_cb,
 	/********************************************************/
 	/* start AFC and move dirs out of the way */
 	/********************************************************/
-	lockdownd_pair_record_t port = 0;
-	if (lockdown_start_service(lockdown, "com.apple.afc", &port) != 0) {
+	lockdownd_service_descriptor_t descriptor = NULL;
+	if (lockdown_start_service(lockdown, "com.apple.afc", &descriptor) != 0) {
 		status_cb("ERROR: Failed to start AFC service", 0);
 		lockdown_free(lockdown);
 		device_free(device);
@@ -850,7 +852,7 @@ static int jailbreak_50(const char* udid, status_cb_t status_cb,
 	lockdown = NULL;
 
 	afc_client_t afc = NULL;
-	afc_client_new(device->client, port, &afc);
+	afc_client_new(device->client, descriptor, &afc);
 	if (!afc) {
 		status_cb("ERROR: Could not connect to AFC service", 0);
 		device_free(device);
@@ -1139,14 +1141,14 @@ static int jailbreak_50(const char* udid, status_cb_t status_cb,
 	plist_t state = NULL;
 
 	while (!done && (retries-- > 0)) {
-		port = 0;
+		descriptor = NULL;
 		lockdown_start_service(lockdown, "com.apple.springboardservices",
-				&port);
-		if (!port) {
+				&descriptor);
+		if (descriptor == NULL) {
 			continue;
 		}
 		sbsc = NULL;
-		sbservices_client_new(device->client, port, &sbsc);
+		sbservices_client_new(device->client, descriptor, &sbsc);
 		if (!sbsc) {
 			continue;
 		}
@@ -1257,8 +1259,8 @@ static int jailbreak_50(const char* udid, status_cb_t status_cb,
 		return -1;
 	}
 
-	port = 0;
-	if (lockdown_start_service(lockdown, "com.apple.afc", &port) != 0) {
+	descriptor = NULL;
+	if (lockdown_start_service(lockdown, "com.apple.afc", &descriptor) != 0) {
 		status_cb("ERROR: Failed to start AFC service", 0);
 		lockdown_free(lockdown);
 		device_free(device);
@@ -1268,7 +1270,7 @@ static int jailbreak_50(const char* udid, status_cb_t status_cb,
 	lockdown = NULL;
 
 	afc = NULL;
-	afc_client_new(device->client, port, &afc);
+	afc_client_new(device->client, descriptor, &afc);
 	if (!afc) {
 		status_cb("ERROR: Could not connect to AFC service", 0);
 		device_free(device);
@@ -1519,8 +1521,8 @@ static int jailbreak_50(const char* udid, status_cb_t status_cb,
 		return -1;
 	}
 
-	port = 0;
-	if (lockdown_start_service(lockdown, "com.apple.afc", &port) != 0) {
+	descriptor = NULL;
+	if (lockdown_start_service(lockdown, "com.apple.afc", &descriptor) != 0) {
 		lockdown_free(lockdown);
 		device_free(device);
 		status_cb("ERROR: Failed to start AFC service. Aborting.\n", 0);
@@ -1528,7 +1530,7 @@ static int jailbreak_50(const char* udid, status_cb_t status_cb,
 	}
 	lockdown_free(lockdown);
 
-	afc_client_new(device->client, port, &afc);
+	afc_client_new(device->client, descriptor, &afc);
 	if (!afc) {
 		status_cb("ERROR: Could not connect to AFC. Aborting.\n", 0);
 		goto leave;
@@ -1555,14 +1557,14 @@ static int jailbreak_50(const char* udid, status_cb_t status_cb,
 	state = NULL;
 
 	while (!done && (retries-- > 0)) {
-		port = 0;
+		descriptor = NULL;
 		lockdown_start_service(lockdown, "com.apple.springboardservices",
-				&port);
-		if (!port) {
+				&descriptor);
+		if (descriptor == NULL) {
 			continue;
 		}
 		sbsc = NULL;
-		sbservices_client_new(device->client, port, &sbsc);
+		sbservices_client_new(device->client, descriptor, &sbsc);
 		if (!sbsc) {
 			continue;
 		}
@@ -1587,15 +1589,15 @@ static int jailbreak_50(const char* udid, status_cb_t status_cb,
 	fix: status_cb("Recovering files...", 80);
 	if (!afc) {
 		lockdown = lockdown_open(device);
-		port = 0;
-		if (lockdown_start_service(lockdown, "com.apple.afc", &port) != 0) {
+		descriptor = NULL;
+		if (lockdown_start_service(lockdown, "com.apple.afc", &descriptor) != 0) {
 			status_cb("ERROR: Could not start AFC service. Aborting.", 0);
 			lockdown_free(lockdown);
 			goto leave;
 		}
 		lockdown_free(lockdown);
 
-		afc_client_new(device->client, port, &afc);
+		afc_client_new(device->client, descriptor, &afc);
 		if (!afc) {
 			status_cb("ERROR: Could not connect to AFC. Aborting.\n", 0);
 			goto leave;
@@ -1628,9 +1630,6 @@ static int jailbreak_50(const char* udid, status_cb_t status_cb,
 
 }
 
-extern int userpref_get_device_public_key(const char* udid,
-		unsigned char** pubkey, unsigned int* pubkey_len);
-
 static int jailbreak_51(const char* udid, status_cb_t status_cb,
 		device_t* device, lockdown_t* lockdown, const char* product,
 		const char* build) {
@@ -1644,8 +1643,8 @@ static int jailbreak_51(const char* udid, status_cb_t status_cb,
 	/********************************************************/
 	/* start AFC and move dirs out of the way */
 	/********************************************************/
-	lockdownd_pair_record_t port = 0;
-	if (lockdown_start_service(lockdown, "com.apple.afc", &port) != 0) {
+	lockdownd_service_descriptor_t descriptor = NULL;
+	if (lockdown_start_service(lockdown, "com.apple.afc", &descriptor) != 0) {
 		status_cb("ERROR: Failed to start AFC service", 0);
 		lockdown_free(lockdown);
 		device_free(device);
@@ -1666,7 +1665,7 @@ static int jailbreak_51(const char* udid, status_cb_t status_cb,
 	lockdown = NULL;
 
 	afc_client_t afc = NULL;
-	afc_client_new(device->client, port, &afc);
+	afc_client_new(device->client, descriptor, &afc);
 	if (!afc) {
 		status_cb("ERROR: Could not connect to AFC service", 0);
 		device_free(device);
@@ -1683,13 +1682,13 @@ static int jailbreak_51(const char* udid, status_cb_t status_cb,
 		plist_free(device_public_key);
 		unsigned char* pkey = NULL;
 		unsigned int pkeylen = 0;
-		if (userpref_get_device_public_key(udid, &pkey, &pkeylen) != 0) {
+		// if (userpref_get_device_public_key(udid, &pkey, &pkeylen) != 0) {
 			status_cb("ERROR: Unrecoverable error occured...", 0);
 			device_free(device);
 			return -1;
-		}
-		uint64_t pklen = pkeylen;
-		device_public_key = plist_new_data(pkey, pklen);
+		// }
+		// uint64_t pklen = pkeylen;
+		// device_public_key = plist_new_data(pkey, pklen);
 	}
 
 	// check if directory exists
@@ -2107,8 +2106,8 @@ static int jailbreak_51(const char* udid, status_cb_t status_cb,
 			status_cb("ERROR: Could not connect to lockdownd. Aborting.\n", 0);
 			return -1;
 		}
-		port = 0;
-		if (lockdown_start_service2(lockdown, "com.apple.afc2", &port, 0)
+		descriptor = NULL;
+		if (lockdown_start_service2(lockdown, "com.apple.afc2", &descriptor, 0)
 				== 0) {
 			done = 1;
 			break;
@@ -2118,9 +2117,9 @@ static int jailbreak_51(const char* udid, status_cb_t status_cb,
 		sleep(5);
 	}
 	if (lockdown) {
-		port = 0;
-		if (lockdown_start_service(lockdown, "com.apple.afc", &port) == 0) {
-			afc_client_new(device->client, port, &afc);
+		descriptor = NULL;
+		if (lockdown_start_service(lockdown, "com.apple.afc", &descriptor) == 0) {
+			afc_client_new(device->client, descriptor, &afc);
 			if (afc) {
 				afc_remove_path(afc, "/Books/" IOS_5_1_AUDIT_INJECT_DIR);
 				afc_remove_path(afc, "/Books/" IOS_5_1_LOCKDOWN_INJECT_DIR);
@@ -2153,15 +2152,15 @@ static int jailbreak_51(const char* udid, status_cb_t status_cb,
 	status_cb("Recovering files...", 80);
 	if (!afc) {
 		lockdown = lockdown_open(device);
-		port = 0;
-		if (lockdown_start_service(lockdown, "com.apple.afc", &port) != 0) {
+		descriptor = NULL;
+		if (lockdown_start_service(lockdown, "com.apple.afc", &descriptor) != 0) {
 			status_cb("ERROR: Could not start AFC service. Aborting.", 0);
 			lockdown_free(lockdown);
 			goto leave;
 		}
 		lockdown_free(lockdown);
 
-		afc_client_new(device->client, port, &afc);
+		afc_client_new(device->client, descriptor, &afc);
 		if (!afc) {
 			status_cb("ERROR: Could not connect to AFC. Aborting.\n", 0);
 			goto leave;
@@ -2240,15 +2239,10 @@ void stroke_lockdownd(device_t * device)
     sleep(5);
 }
 
-typedef struct {
-	lockdownd_pair_record_t port;
-} lockdownd_service_descriptor;
-
 static int jailbreak_70(const char* udid, status_cb_t status_cb,
 		device_t* device, lockdown_t* lockdown, const char* product,
 		const char* build) {
 	char backup_dir[1024];
-	lockdownd_service_descriptor desc;
 	info("Jailbreaking 7.x!!!\n");
 	tmpnam(backup_dir);
 	debug("Backing up files to %s\n", backup_dir);
@@ -2278,8 +2272,8 @@ static int jailbreak_70(const char* udid, status_cb_t status_cb,
 
 	debug("Device info: %s, %s\n", product, build);
 
-	lockdownd_pair_record_t port;
-	if (lockdown_start_service(lockdown, "com.apple.afc", &port) != 0) {
+	lockdownd_service_descriptor_t descriptor;
+	if (lockdown_start_service(lockdown, "com.apple.afc", &descriptor) != 0) {
 		error("Failed to start AFC service", 0);
 		lockdown_free(lockdown);
 		device_free(device);
@@ -2289,8 +2283,7 @@ static int jailbreak_70(const char* udid, status_cb_t status_cb,
 	lockdown = NULL;
 
 	afc_client_t afc = NULL;
-	desc.port = port;
-	afc_client_new(device->client, &desc, &afc);
+	afc_client_new(device->client, descriptor, &afc);
 	if (!afc) {
 		error("Could not connect to AFC service\n");
 		device_free(device);
@@ -2336,7 +2329,7 @@ static int jailbreak_70(const char* udid, status_cb_t status_cb,
 	if (!lockdown)
 		lockdown = lockdown_open(device);
 
-	if (lockdown_start_service(lockdown, "com.apple.mobile.file_relay", &port)
+	if (lockdown_start_service(lockdown, "com.apple.mobile.file_relay", &descriptor)
 			!= 0) {
 		error("Failed to start File Relay\n");
 		lockdown_free(lockdown);
@@ -2344,8 +2337,7 @@ static int jailbreak_70(const char* udid, status_cb_t status_cb,
 		return -1;
 	}
 
-	desc.port = port;
-	if (file_relay_client_new(device->client, &desc, &frc)
+	if (file_relay_client_new(device->client, descriptor, &frc)
 			!= FILE_RELAY_E_SUCCESS) {
 		error("Failed to start File Relay\n");
 		return -1;
@@ -2622,16 +2614,15 @@ static int jailbreak_70(const char* udid, status_cb_t status_cb,
 	debug("Waiting for SpringBoard...\n");
 
 	while (!done && (retries-- > 0)) {
-		port = 0;
+		descriptor = NULL;
 		lockdown_start_service(lockdown, "com.apple.springboardservices",
-				&port);
-		if (!port) {
+				&descriptor);
+		if (descriptor == NULL) {
 			continue;
 		}
 		sbsc = NULL;
-		desc.port = port;
 
-		sbservices_client_new(device->client, &desc, &sbsc);
+		sbservices_client_new(device->client, descriptor, &sbsc);
 		if (!sbsc) {
 			continue;
 		}
@@ -2658,16 +2649,15 @@ static int jailbreak_70(const char* udid, status_cb_t status_cb,
 
 	if (!afc) {
 		lockdown = lockdown_open(device);
-		port = 0;
-		if (lockdown_start_service(lockdown, "com.apple.afc", &port) != 0) {
+		descriptor = NULL;
+		if (lockdown_start_service(lockdown, "com.apple.afc", &descriptor) != 0) {
 			info("Could not start AFC service. Aborting.\n");
 			lockdown_free(lockdown);
 			goto leave;
 		}
 		lockdown_free(lockdown);
 
-		desc.port = port;
-		afc_client_new(device->client, &desc, &afc);
+		afc_client_new(device->client, descriptor, &afc);
 		if (!afc) {
 			info("Could not connect to AFC. Aborting.\n");
 			goto leave;
@@ -2716,16 +2706,15 @@ static int jailbreak_70(const char* udid, status_cb_t status_cb,
 
 	if (!afc) {
 		lockdown = lockdown_open(device);
-		port = 0;
-		if (lockdown_start_service(lockdown, "com.apple.afc", &port) != 0) {
+		descriptor = NULL;
+		if (lockdown_start_service(lockdown, "com.apple.afc", &descriptor) != 0) {
 			info("Could not start AFC service. Aborting.\n");
 			lockdown_free(lockdown);
 			goto leave;
 		}
 		lockdown_free(lockdown);
 
-		desc.port = port;
-		afc_client_new(device->client, &desc, &afc);
+		afc_client_new(device->client, descriptor, &afc);
 		if (!afc) {
 			info("Could not connect to AFC. Aborting.\n");
 			goto leave;
@@ -2786,16 +2775,15 @@ static int jailbreak_70(const char* udid, status_cb_t status_cb,
 
 	if (!afc) {
 		lockdown = lockdown_open(device);
-		port = 0;
-		if (lockdown_start_service(lockdown, "com.apple.afc", &port) != 0) {
+		descriptor = NULL;
+		if (lockdown_start_service(lockdown, "com.apple.afc", &descriptor) != 0) {
 			info("Could not start AFC service. Aborting.\n");
 			lockdown_free(lockdown);
 			goto leave;
 		}
 		lockdown_free(lockdown);
 
-		desc.port = port;
-		afc_client_new(device->client, &desc, &afc);
+		afc_client_new(device->client, descriptor, &afc);
 		if (!afc) {
 			info("Could not connect to AFC. Aborting.\n");
 			goto leave;
@@ -2907,16 +2895,15 @@ static int jailbreak_70(const char* udid, status_cb_t status_cb,
 	fix: debug("Recovering files...\n", 80);
 	if (!afc) {
 		lockdown = lockdown_open(device);
-		port = 0;
-		if (lockdown_start_service(lockdown, "com.apple.afc", &port) != 0) {
+		descriptor = NULL;
+		if (lockdown_start_service(lockdown, "com.apple.afc", &descriptor) != 0) {
 			info("Could not start AFC service. Aborting.\n");
 			lockdown_free(lockdown);
 			goto leave;
 		}
 		lockdown_free(lockdown);
 
-		desc.port = port;
-		afc_client_new(device->client, &desc, &afc);
+		afc_client_new(device->client, descriptor, &afc);
 		if (!afc) {
 			info("Could not connect to AFC. Aborting.\n");
 			goto leave;
@@ -3032,13 +3019,13 @@ int jailbreak(const char* udid, status_cb_t status_cb) {
 		return -1;
 	}
 
-	lockdownd_pair_record_t port = 0;
-	if (lockdown_start_service2(lockdown, "com.apple.afc2", &port, 0) == 0) {
+	lockdownd_service_descriptor_t descriptor = NULL;
+	if (lockdown_start_service2(lockdown, "com.apple.afc2", &descriptor, 0) == 0) {
 		char **fileinfo = NULL;
 		uint32_t ffmt = 0;
 
 		afc_client_t afc2 = NULL;
-		afc_client_new(device->client, port, &afc2);
+		afc_client_new(device->client, descriptor, &afc2);
 		if (afc2) {
 			afc_get_file_info(afc2, "/Applications", &fileinfo);
 			if (fileinfo) {

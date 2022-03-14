@@ -39,4 +39,6 @@ void hexdump(unsigned char* buf, unsigned int len);
 void rmdir_recursive(const char *path);
 int __mkdir(const char* path, int mode);
 
+int check_ascii_pointer(uint32_t pointer);
+
 #endif /* COMMON_H */

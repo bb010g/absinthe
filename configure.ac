@@ -15,12 +15,14 @@ AC_DEFINE(_DEBUG,1,[debugging])
 
 AC_PROG_CXX
 
-ACCFLAGS="-m32 -I\$(top_srcdir)/include -g -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES "
+PKG_CHECK_MODULES([DEPENDENCIES], [libcrypto > 1 libcrypto < 2 libssl > 1 libssl < 2 libusbmuxd-2.0 libxml-2.0 libimobiledevice-1.0 libplist-2.0])
+DEPENDENCIES_CFLAGS+=" -I`brew --prefix bzip2`/include"
+DEPENDENCIES_LIBS+=" -L`brew --prefix bzip2`/lib -lbz2"
+
+ACCFLAGS="-m64 -I\$(top_srcdir)/include -g -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES "
+ACCXXFLAGS=""
 ACSHAREDLIBS=""
 ACLDFLAGS=""
-
-LIBXML2_STATIC=""
-OPENSSL_STATIC=""
 
 SYSTYPE=
 case "$host_os" in
@@ -32,26 +34,26 @@ case "$host_os" in
 		fi
 		if test "x$BUILD_10_5" = "x1"; then
 		SYSTYPE=osx.10.5
-		ACCFLAGS+="-fPIC -arch i386 -arch ppc -isysroot $SDK_DIR/MacOSX10.5.sdk -mmacosx-version-min=10.6 "
-		ACSHAREDLIBS+="-lpthread -lz -lm -liconv -lssl -lcrypto -lxml2 "
-		ACLDFLAGS="-arch i386 -arch ppc "
+		ACCFLAGS+="-fPIC -arch x86_64 -isysroot $SDK_DIR/MacOSX10.5.sdk -mmacosx-version-min=10.6 $DEPENDENCIES_CFLAGS "
+		ACSHAREDLIBS+="-lpthread -lz -lm -liconv $DEPENDENCIES_LIBS "
+		ACLDFLAGS="-arch x86_64 "
 		LIBSDIR="\$(top_srcdir)/staticlibs/$SYSTYPE"
 		ACGUI_CFLAGS+="-DPIC -DHAVE_ASPRINTF -DHAVE_VASPRINTF \ 
                         -DCURL_PULL_SYS_SOCKET_H \
                         -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES"
-                ACGUI_LDFLAGS+="-pthread -static-libstdc++"
+                ACGUI_LDFLAGS+="-pthread"
                 ACGUI_LDADD+="-framework IOKit -framework Cocoa -framework System"
 		else
 		SYSTYPE=osx
-		ACCFLAGS+="-fPIC -arch i386 "
-		ACSHAREDLIBS+="-lpthread -lz -lm -liconv -lssl -lcrypto -lxml2 "
-		ACLDFLAGS+="-arch i386 "
+		ACCFLAGS+="-fPIC -arch x86_64 $DEPENDENCIES_CFLAGS "
+		ACSHAREDLIBS+="-lpthread -lz -lm -liconv $DEPENDENCIES_LIBS "
+		ACLDFLAGS+="-arch x86_64 "
 		LIBSDIR="\$(top_srcdir)/staticlibs/$SYSTYPE"
 		ACGUI_CFLAGS+="-DPIC -DHAVE_ASPRINTF -DHAVE_VASPRINTF \
-			-isysroot $SDK_DIR/MacOSX10.8.sdk \
+			-isysroot $SDK_DIR/MacOSX12.1.sdk \
 			-DCURL_PULL_SYS_SOCKET_H \
 			-D_FILE_OFFSET_BITS=64 -D_LARGE_FILES"
-		ACGUI_LDFLAGS+="-pthread -static-libstdc++"
+		ACGUI_LDFLAGS+="-pthread"
 		ACGUI_LDADD+="-framework IOKit -framework Cocoa -framework System -framework Security"
 		fi
 	;;
@@ -95,7 +97,6 @@ case "$host_os" in
 		ACGUI_LDADD+="\$(top_srcdir)/gui/win32res.o \
 			-lm -lws2_32 -lgdi32 -lole32 -loleaut32 -luuid -lcomctl32 -lsetupapi"
 		LIBXML2_STATIC="$LIBSDIR/libxml2.a"
-		OPENSSL_STATIC="$LIBSDIR/libssl.a $LIBSDIR/libcrypto.a"
 	;;
 	*)
 	;;
@@ -111,24 +112,22 @@ AM_CONDITIONAL([WIN32], [test x$SYSTYPE = xwin32])
 
 GLOBAL_CFLAGS=$ACCFLAGS
 AC_SUBST(GLOBAL_CFLAGS)
+GLOBAL_CXXFLAGS=$ACCXXFLAGS
+AC_SUBST(GLOBAL_CXXFLAGS)
 
 LIBDIR="\$(top_srcdir)/staticlibs/$SYSTYPE"
 GLOBAL_LIBS=" \
- $LIBDIR/libimobiledevice.a \
- $LIBDIR/libplist.a \
- $LIBXML2_STATIC \
- $OPENSSL_STATIC \
- $LIBDIR/libusbmuxd.a \
- $LIBDIR/libbz2.a \
  $ACSHAREDLIBS \ 
 "
 AC_SUBST(GLOBAL_LIBS)
 
-GLOBAL_LDFLAGS="-static-libgcc $ACLDFLAGS"
+GLOBAL_LDFLAGS="$ACLDFLAGS"
 AC_SUBST(GLOBAL_LDFLAGS)
 
 GUI_CFLAGS=$ACGUI_CFLAGS
 AC_SUBST(GUI_CFLAGS)
+GUI_CXXFLAGS=$ACGUI_CXXFLAGS
+AC_SUBST(GUI_CXXFLAGS)
 
 GUI_LDFLAGS=$ACGUI_LDFLAGS
 AC_SUBST(GUI_LDFLAGS)

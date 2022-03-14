@@ -434,7 +434,7 @@ int main(int argc, char** argv)
 	idevice_t device = NULL;
 	lockdownd_client_t lckd = NULL;
 	afc_client_t afc = NULL;
-	uint16_t port = 0;
+	lockdownd_service_descriptor_t descriptor = NULL;
 	char* udid = NULL;
 	int dscs = 0;
 
@@ -484,15 +484,15 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	lockdownd_start_service(lckd, "com.apple.afc", &port);
-	if (!port) {
+	lockdownd_start_service(lckd, "com.apple.afc", &descriptor);
+	if (descriptor == NULL) {
 		lockdownd_client_free(lckd);
 		idevice_free(device);
 		printf("Error starting AFC service\n");
 		return -1;
 	}
 
-	afc_client_new(device, port, &afc);
+	afc_client_new(device, descriptor, &afc);
 	if (!afc) {
 		lockdownd_client_free(lckd);
 		idevice_free(device);
@@ -702,16 +702,16 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	port = 0;
-	lockdownd_start_service(lckd, "com.apple.afc", &port);
-	if (!port) {
+	descriptor = NULL;
+	lockdownd_start_service(lckd, "com.apple.afc", &descriptor);
+	if (descriptor == NULL) {
 		lockdownd_client_free(lckd);
 		idevice_free(device);
 		printf("Error starting AFC service\n");
 		return -1;
 	}
 
-	afc_client_new(device, port, &afc);
+	afc_client_new(device, descriptor, &afc);
 	if (!afc) {
 		lockdownd_client_free(lckd);
 		idevice_free(device);
@@ -761,13 +761,13 @@ int main(int argc, char** argv)
 	plist_t state = NULL;
 
 	while (!done && (retries-- > 0)) {
-		port = 0;
-		lockdownd_start_service(lckd, "com.apple.springboardservices", &port);
-		if (!port) {
+		descriptor = NULL;
+		lockdownd_start_service(lckd, "com.apple.springboardservices", &descriptor);
+		if (descriptor == NULL) {
 			continue;
 		}
 		sbsc = NULL;
-		sbservices_client_new(device, port, &sbsc);
+		sbservices_client_new(device, descriptor, &sbsc);
 		if (!sbsc) {
 			continue;
 		}

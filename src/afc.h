@@ -24,14 +24,14 @@
 #include "lockdown.h"
 
 typedef struct afc_t {
-	uint16_t port;
+	lockdownd_service_descriptor_t descriptor;
 	device_t* device;
 	afc_client_t client;
 } afc_t;
 
 afc_t* afc_create();
 afc_t* afc_connect(device_t* device);
-afc_t* afc_open(device_t* device, uint16_t port);
+afc_t* afc_open(device_t* device, lockdownd_service_descriptor_t descriptor);
 
 int afc_send_file(afc_t* afc, const char* local, const char* remote);
 int afc_close(afc_t* afc);

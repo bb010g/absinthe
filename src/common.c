@@ -18,6 +18,7 @@
  **/
 
 #include <dirent.h>
+#include <unistd.h>
 
 #include "debug.h"
 #include "common.h"

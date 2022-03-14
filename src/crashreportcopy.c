@@ -40,7 +40,7 @@ crashreportcopy_t* crashreportcopy_create() {
 
 crashreportcopy_t* crashreportcopy_connect(device_t* device) {
 	int err = 0;
-	uint16_t port = 0;
+	lockdownd_service_descriptor_t descriptor = NULL;
 	crashreportcopy_t* copier = NULL;
 	lockdown_t* lockdown = NULL;
 
@@ -50,7 +50,7 @@ crashreportcopy_t* crashreportcopy_connect(device_t* device) {
 		return NULL;
 	}
 
-	err = lockdown_start_service(lockdown, "com.apple.crashreportcopymobile", &port);
+	err = lockdown_start_service(lockdown, "com.apple.crashreportcopymobile", &descriptor);
 	if(err < 0) {
 		error("Unable to start AFC service\n");
 		return NULL;
@@ -58,7 +58,7 @@ crashreportcopy_t* crashreportcopy_connect(device_t* device) {
 	lockdown_close(lockdown);
 	lockdown_free(lockdown);
 
-	copier = crashreportcopy_open(device, port);
+	copier = crashreportcopy_open(device, descriptor);
 	if(copier == NULL) {
 		error("Unable to open connection to CrashReporter copy service\n");
 		return NULL;
@@ -67,11 +67,11 @@ crashreportcopy_t* crashreportcopy_connect(device_t* device) {
 	return copier;
 }
 
-crashreportcopy_t* crashreportcopy_open(device_t* device, uint16_t port) {
+crashreportcopy_t* crashreportcopy_open(device_t* device, lockdownd_service_descriptor_t descriptor) {
 	int err = 0;
 	crashreportcopy_t* copier = crashreportcopy_create();
 	if(copier != NULL) {
-		err = afc_client_new(device->client, port, &(copier->client));
+		err = afc_client_new(device->client, descriptor, &(copier->client));
 		if(err < 0) {
 			return NULL;
 		}

@@ -8,9 +8,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "device.h"
 #include "backup.h"
+#include "file.h"
 
 int main(int argc, char* argv[]) {
 	if (argc < 4) {

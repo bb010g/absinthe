@@ -21,16 +21,17 @@
 #define CRASHREPORTMOVER_H_
 
 #include <libimobiledevice/libimobiledevice.h>
+#include <libimobiledevice/lockdown.h>
 
 typedef struct crashreportmover_t {
-	uint16_t port;
+	lockdownd_service_descriptor_t descriptor;
 	device_t* device;
 	idevice_connection_t connection;
 } crashreportmover_t;
 
 crashreportmover_t* crashreportmover_create();
 crashreportmover_t* crashreportmover_connect(device_t* device);
-crashreportmover_t* crashreportmover_open(device_t* device, uint16_t port);
+crashreportmover_t* crashreportmover_open(device_t* device, lockdownd_service_descriptor_t descriptor);
 
 int crashreportmover_close(crashreportmover_t* mover);
 void crashreportmover_free(crashreportmover_t* mover);

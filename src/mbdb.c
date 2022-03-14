@@ -24,6 +24,7 @@
 
 #include "mbdb.h"
 #include "debug.h"
+#include "file.h"
 
 mbdb_t* mbdb_create() {
 	mbdb_t* mbdb = NULL;

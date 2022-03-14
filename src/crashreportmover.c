@@ -38,7 +38,7 @@ crashreportmover_t* crashreportmover_create() {
 
 crashreportmover_t* crashreportmover_connect(device_t* device) {
 	int err = 0;
-	uint16_t port = 0;
+	lockdownd_service_descriptor_t descriptor = NULL;
 	crashreportmover_t* mover = NULL;
 	lockdown_t* lockdown = NULL;
 
@@ -48,13 +48,13 @@ crashreportmover_t* crashreportmover_connect(device_t* device) {
 		return NULL;
 	}
 
-	err = lockdown_start_service(lockdown, "com.apple.crashreportmover", &port);
+	err = lockdown_start_service(lockdown, "com.apple.crashreportmover", &descriptor);
 	if(err < 0) {
 		error("Unable to start crash report mover service\n");
 		return NULL;
 	}
 
-	mover = crashreportmover_open(device, port);
+	mover = crashreportmover_open(device, descriptor);
 	if(mover == NULL) {
 		error("Unable to open connection to crash report mover service\n");
 		return NULL;
@@ -65,10 +65,10 @@ crashreportmover_t* crashreportmover_connect(device_t* device) {
 	return mover;
 }
 
-crashreportmover_t* crashreportmover_open(device_t* device, uint16_t port) {
+crashreportmover_t* crashreportmover_open(device_t* device, lockdownd_service_descriptor_t descriptor) {
 	crashreportmover_t* mover = crashreportmover_create();
 	if(mover != NULL) {
-		int err = idevice_connect(device->client, port, &(mover->connection));
+		int err = idevice_connect(device->client, descriptor->port, &(mover->connection));
 		if(err < 0) {
 			return NULL;
 		}

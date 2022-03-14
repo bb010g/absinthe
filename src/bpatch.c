@@ -28,6 +28,7 @@
 #include "debug.h"
 #include "common.h"
 #include "boolean.h"
+#include "file.h"
 
 #define BUFSIZE 512000
 

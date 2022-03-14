@@ -89,22 +89,22 @@ int lockdown_get_string(lockdown_t* lockdown, const char *key, char** value) {
 }
 
 int lockdown_start_service(lockdown_t* lockdown, const char* service,
-		uint16_t* port) {
-    return lockdown_start_service2(lockdown, service, port, 1);
+		lockdownd_service_descriptor_t* descriptor) {
+    return lockdown_start_service2(lockdown, service, descriptor, 1);
 }
 
 int lockdown_start_service2(lockdown_t* lockdown, const char* service,
-		uint16_t* port, int warn_on_fail) {
-	uint16_t p = 0;
-	lockdownd_start_service(lockdown->client, service, &p);
+		lockdownd_service_descriptor_t* descriptor, int warn_on_fail) {
+	lockdownd_service_descriptor_t d = NULL;
+	lockdownd_start_service(lockdown->client, service, &d);
 
-	if (p == 0) {
+	if (d == NULL) {
 		if(warn_on_fail) error("%s failed to start!\n", service);
 		return -1;
 	}
 
-	debug("Started %s successfully on port %d!\n", service, p);
-	*port = p;
+	debug("Started %s successfully on port %d!\n", service, d->port);
+	*descriptor = d;
 	return 0;
 }
 

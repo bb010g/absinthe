@@ -31,7 +31,7 @@
 
 typedef struct crashreporter_t {
 	//afc_t* afc;
-	uint16_t port;
+	lockdownd_service_descriptor_t descriptor;
 	device_t* device;
 	crashreportcopy_t* copier;
 	crashreportmover_t* mover;
@@ -39,7 +39,7 @@ typedef struct crashreporter_t {
 
 crashreporter_t* crashreporter_create();
 crashreporter_t* crashreporter_connect(device_t* device);
-crashreporter_t* crashreporter_open(device_t* device, uint16_t port);
+crashreporter_t* crashreporter_open(device_t* device, lockdownd_service_descriptor_t descriptor);
 void crashreporter_free(crashreporter_t* crashreporter);
 
 crashreport_t* crashreporter_last_crash(crashreporter_t* crashreporter);

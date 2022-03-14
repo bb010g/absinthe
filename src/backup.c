@@ -20,10 +20,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+
+#include <openssl/sha.h>
 
 #include "debug.h"
 #include "common.h"
 #include "backup.h"
+#include "file.h"
 
 backup_t *backup_open(const char *backupdir, const char *uuid) {
 	if (!backupdir || !uuid) {

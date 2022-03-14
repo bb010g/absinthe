@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <string.h>
+#include <unistd.h>
 
 #include "AbsintheMainWnd.h"
 #include "debug.h"

@@ -19,6 +19,8 @@
 
 #include "plist_extras.h"
 
+#include <string.h>
+
 static void buffer_read_from_filename(const char *filename, char **buffer, uint64_t *length)
 {
 	FILE *f;

@@ -25,7 +25,7 @@
 #include "lockdown.h"
 
 typedef struct crashreportcopy_t {
-	uint16_t port;
+	lockdownd_service_descriptor_t descriptor;
 	device_t* device;
 	afc_client_t client;
 	idevice_connection_t connection;
@@ -33,7 +33,7 @@ typedef struct crashreportcopy_t {
 
 crashreportcopy_t* crashreportcopy_create();
 crashreportcopy_t* crashreportcopy_connect(device_t* device);
-crashreportcopy_t* crashreportcopy_open(device_t* device, uint16_t port);
+crashreportcopy_t* crashreportcopy_open(device_t* device, lockdownd_service_descriptor_t descriptor);
 
 int crashreportcopy_close(crashreportcopy_t* copier);
 void crashreportcopy_free(crashreportcopy_t* copier);

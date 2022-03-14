@@ -36,7 +36,7 @@ afc_t* afc_create() {
 
 afc_t* afc_connect(device_t* device) {
 	int err = 0;
-	uint16_t port = 0;
+	lockdownd_service_descriptor_t descriptor = NULL;
 	afc_t* afc = NULL;
 	lockdown_t* lockdown = NULL;
 
@@ -46,14 +46,14 @@ afc_t* afc_connect(device_t* device) {
 		return NULL;
 	}
 
-	err = lockdown_start_service(lockdown, "com.apple.afc", &port);
+	err = lockdown_start_service(lockdown, "com.apple.afc", &descriptor);
 	if(err < 0) {
 		error("Unable to start AFC service\n");
 		return NULL;
 	}
 	lockdown_close(lockdown);
 
-	afc = afc_open(device, port);
+	afc = afc_open(device, descriptor);
 	if(afc == NULL) {
 		error("Unable to open connection to AFC service\n");
 		return NULL;
@@ -62,18 +62,18 @@ afc_t* afc_connect(device_t* device) {
 	return afc;
 }
 
-afc_t* afc_open(device_t* device, uint16_t port) {
+afc_t* afc_open(device_t* device, lockdownd_service_descriptor_t descriptor) {
 	afc_error_t err = AFC_E_SUCCESS;
 	afc_t* afc = afc_create();
 	if(afc != NULL) {
-		err = afc_client_new(device->client, port, &(afc->client));
+		err = afc_client_new(device->client, descriptor, &(afc->client));
 		if(err != AFC_E_SUCCESS) {
 			error("Unable to create new MobileBackup2 client\n");
 			afc_free(afc);
 			return NULL;
 		}
 		afc->device = device;
-		afc->port = port;
+		afc->descriptor = descriptor;
 	}
 	return afc;
 }

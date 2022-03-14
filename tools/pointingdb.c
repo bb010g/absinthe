@@ -27,7 +27,7 @@
  * Small program I wrote to help me find usable addresses in iPhone memory
  */
 
-int main(int argc, char* argv) {
+int main(int argc, char** argv) {
 	int i = 0;
 	unsigned int size = 0;
 	unsigned char* data = NULL;

@@ -47,4 +47,6 @@ int backup_add_file_from_data(backup_t * backup, char *domain, char *data,
                               unsigned int size, char *path, int mode, int uid,
                               int gid, int flag);
 
+int backup_write_mbdb(backup_t * backup);
+
 #endif

@@ -40,7 +40,6 @@ crashreporter_t* crashreporter_create() {
 
 crashreporter_t* crashreporter_connect(device_t* device) {
 	int err = 0;
-	uint16_t port = 0;
 	crashreporter_t* crashreporter = crashreporter_create();
 	if(crashreporter != NULL) {
 		crashreporter->mover = crashreportmover_connect(device);
@@ -59,14 +58,14 @@ crashreporter_t* crashreporter_connect(device_t* device) {
 	return crashreporter;
 }
 
-crashreporter_t* crashreporter_open(device_t* device, uint16_t port) {
+crashreporter_t* crashreporter_open(device_t* device, lockdownd_service_descriptor_t descriptor) {
 	crashreporter_t* crashreporter = crashreporter_create();
 	if(crashreporter == NULL) {
 		error("Unable to create CrashReporter client\n");
 		return NULL;
 	}
 	// Startup crashreportmover service to move our crashes to the proper place ???
-	crashreportmover_t* mover = crashreportmover_open(device, port);
+	crashreportmover_t* mover = crashreportmover_open(device, descriptor);
 	if(mover == NULL) {
 		
 		printf("failed to open crashreportermover_open!\n");
@@ -75,7 +74,7 @@ crashreporter_t* crashreporter_open(device_t* device, uint16_t port) {
 	}
 	
 	// Startup crashreporter copy to copy them to mobile root??	
-	crashreportcopy_t* copier = crashreportcopy_open(device, port);
+	crashreportcopy_t* copier = crashreportcopy_open(device, descriptor);
 	if(copier == NULL) {
 		//crashreportmover_free(mover);
 		return NULL;
@@ -187,7 +186,7 @@ crashreport_t* crashreporter_last_crash(crashreporter_t* crashreporter) {
 		return NULL;
 	}
 
-	int bytes_read = 0;
+	uint32_t bytes_read = 0;
 	err = afc_file_read(crashreporter->copier->client, handle, data, 0x1000, &bytes_read);
 	while(err == AFC_E_SUCCESS && bytes_read > 0) {
 		fwrite(data, 1, bytes_read, output);

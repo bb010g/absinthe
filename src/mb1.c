@@ -53,7 +53,7 @@ mb1_t* mb1_create() {
 
 mb1_t* mb1_connect(device_t* device) {
 	int err = 0;
-	uint16_t port = 0;
+	lockdownd_service_descriptor_t descriptor = NULL;
 	mb1_t* mb1 = NULL;
 	lockdown_t* lockdown = NULL;
 
@@ -68,7 +68,7 @@ mb1_t* mb1_connect(device_t* device) {
 		return NULL;
 	}
 
-	err = lockdown_start_service(lockdown, "com.apple.mobilebackup", &port);
+	err = lockdown_start_service(lockdown, "com.apple.mobilebackup", &descriptor);
 	if(err < 0) {
 		error("Unable to start MobileBackup service\n");
 		return NULL;
@@ -76,7 +76,7 @@ mb1_t* mb1_connect(device_t* device) {
 	lockdown_close(lockdown);
 	lockdown_free(lockdown);
 
-	mb1 = mb1_open(device, port);
+	mb1 = mb1_open(device, descriptor);
 	if(mb1 == NULL) {
 		error("Unable to open connection to MobileBackup service\n");
 		return NULL;
@@ -85,18 +85,18 @@ mb1_t* mb1_connect(device_t* device) {
 	return mb1;
 }
 
-mb1_t* mb1_open(device_t* device, uint16_t port) {
+mb1_t* mb1_open(device_t* device, lockdownd_service_descriptor_t descriptor) {
 	mobilebackup_error_t err = MOBILEBACKUP_E_SUCCESS;
 	mb1_t* mb1 = mb1_create();
 	if(mb1 != NULL) {
-		err = mobilebackup_client_new(device->client, port, &(mb1->client));
+		err = mobilebackup_client_new(device->client, descriptor, &(mb1->client));
 		if(err != MOBILEBACKUP_E_SUCCESS) {
 			error("Unable to create new MobileBackup client\n");
 			mb1_free(mb1);
 			return NULL;
 		}
 		mb1->device = device;
-		mb1->port = port;
+		mb1->descriptor = descriptor;
 	}
 	return mb1;
 }
@@ -112,12 +112,12 @@ void mb1_free(mb1_t* mb1) {
 	}
 }
 
-typedef int16_t device_link_service_error_t;
-typedef void* device_link_service_client_t;
-#define DEVICE_LINK_SERVICE_E_MUX_ERROR -3
+// typedef int16_t device_link_service_error_t;
+// typedef void* device_link_service_client_t;
+// #define DEVICE_LINK_SERVICE_E_MUX_ERROR -3
 
-extern device_link_service_error_t device_link_service_send(device_link_service_client_t client, plist_t plist);
-extern device_link_service_error_t device_link_service_receive(device_link_service_client_t client, plist_t *plist);
+// extern device_link_service_error_t device_link_service_send(device_link_service_client_t client, plist_t plist);
+// extern device_link_service_error_t device_link_service_receive(device_link_service_client_t client, plist_t *plist);
 
 int mb1_crash(mb1_t* mb1) {
 
@@ -133,16 +133,18 @@ int mb1_crash(mb1_t* mb1) {
 	plist_array_append_item(arr, dict);
 
 	// send the array plist. this will crash BackupAgent
-	(void)device_link_service_send((struct mobilebackup_client_private*)(mb1->client)->parent, arr);
+	// (void)device_link_service_send((struct mobilebackup_client_private*)(mb1->client)->parent, arr);
+	(void)mobilebackup_send(mb1->client, arr);
 	plist_free(arr);
 
 	// receive to check if it crashed
 	plist_t pl = NULL;
-	device_link_service_error_t res = device_link_service_receive((struct mobilebackup_client_private*)(mb1->client)->parent, &pl);
+	// device_link_service_error_t res = device_link_service_receive((struct mobilebackup_client_private*)(mb1->client)->parent, &pl);
+	mobilebackup_error_t res = mobilebackup_receive(mb1->client, &pl);
 	if (pl) {
 		plist_free(pl);
 	}
-	if (res == DEVICE_LINK_SERVICE_E_MUX_ERROR) {
+	if (res == MOBILEBACKUP_E_MUX_ERROR) {
 		// yep. this leaks. but who cares :P
 		free(mb1->client);
 		mb1->client = NULL;

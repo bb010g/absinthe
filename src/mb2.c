@@ -71,7 +71,7 @@ mb2_t* mb2_create() {
 
 mb2_t* mb2_connect(device_t* device) {
 	int err = 0;
-	uint16_t port = 0;
+	lockdownd_service_descriptor_t descriptor = NULL;
 	mb2_t* mb2 = NULL;
 	lockdown_t* lockdown = NULL;
 
@@ -86,7 +86,7 @@ mb2_t* mb2_connect(device_t* device) {
 		return NULL;
 	}
 
-	err = lockdown_start_service(lockdown, "com.apple.mobilebackup2", &port);
+	err = lockdown_start_service(lockdown, "com.apple.mobilebackup2", &descriptor);
 	if(err < 0) {
 		error("Unable to start MobileBackup2 service\n");
 		return NULL;
@@ -94,7 +94,7 @@ mb2_t* mb2_connect(device_t* device) {
 	lockdown_close(lockdown);
 	lockdown_free(lockdown);
 
-	mb2 = mb2_open(device, port);
+	mb2 = mb2_open(device, descriptor);
 	if(mb2 == NULL) {
 		error("Unable to open connection to MobileBackup2 service\n");
 		return NULL;
@@ -103,18 +103,18 @@ mb2_t* mb2_connect(device_t* device) {
 	return mb2;
 }
 
-mb2_t* mb2_open(device_t* device, uint16_t port) {
+mb2_t* mb2_open(device_t* device, lockdownd_service_descriptor_t descriptor) {
 	mobilebackup2_error_t err = MOBILEBACKUP2_E_SUCCESS;
 	mb2_t* mb2 = mb2_create();
 	if(mb2 != NULL) {
-		err = mobilebackup2_client_new(device->client, port, &(mb2->client));
+		err = mobilebackup2_client_new(device->client, descriptor, &(mb2->client));
 		if(err != MOBILEBACKUP2_E_SUCCESS) {
 			error("Unable to create new MobileBackup2 client\n");
 			mb2_free(mb2);
 			return NULL;
 		}
 		mb2->device = device;
-		mb2->port = port;
+		mb2->descriptor = descriptor;
 	}
 	return mb2;
 }

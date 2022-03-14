@@ -26,7 +26,7 @@
 #include "lockdown.h"
 
 typedef struct mb2_t {
-	uint16_t port;
+	lockdownd_service_descriptor_t descriptor;
 	device_t* device;
 	mobilebackup2_client_t client;
 	unsigned char *poison;
@@ -41,7 +41,7 @@ typedef struct mb2_t {
 
 mb2_t* mb2_create();
 mb2_t* mb2_connect(device_t* device);
-mb2_t* mb2_open(device_t* device, uint16_t port);
+mb2_t* mb2_open(device_t* device, lockdownd_service_descriptor_t descriptor);
 void mb2_free(mb2_t* mb2);
 
 int mb2_crash(mb2_t* mb2);
